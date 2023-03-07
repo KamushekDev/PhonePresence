@@ -1,0 +1,80 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{CBBE967F-E9E7-40EB-B715-DC25E8B934F1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhonePresenceBot", "src\PhonePresenceBot\PhonePresenceBot.csproj", "{F070F651-D98D-4FB6-AC9A-528BEDAD899E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "common", "common", "{7CB1E2A2-234A-44C6-A7ED-A097EE528419}"
+	ProjectSection(SolutionItems) = preProject
+		Dockerfile = Dockerfile
+		.dockerignore = .dockerignore
+		README.md = README.md
+		.gitignore = .gitignore
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhonePresenceBot.Infrastructure", "src\PhonePresenceBot.Infrastructure\PhonePresenceBot.Infrastructure.csproj", "{DB9609EB-2572-4B4B-B8C9-8429A8ACD5F6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhonePresenceBot.Integration.Router", "src\PhonePresenceBot.Integration.Router\PhonePresenceBot.Integration.Router.csproj", "{6F3C4A2B-7A92-460F-A347-101D6101CC9A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhonePresenceBot.Integration.Telegram", "src\PhonePresenceBot.Integration.Telegram\PhonePresenceBot.Integration.Telegram.csproj", "{2A3ADA74-AC53-4199-96D6-0B8BE15D739D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhonePresenceBot.Core", "src\PhonePresenceBot.Core\PhonePresenceBot.Core.csproj", "{5D8CFF39-D238-479A-97C3-10C8FAC2801D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhonePresenceBot.Integration.Telegram.DependencyInjection", "src\PhonePresenceBot.Integration.Telegram.DependencyInjection\PhonePresenceBot.Integration.Telegram.DependencyInjection.csproj", "{C97DF44B-B10A-4D67-85A1-F165E4966CA8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhonePresenceBot.Integration.Router.DependencyInjection", "src\PhonePresenceBot.Integration.Router.DependencyInjection\PhonePresenceBot.Integration.Router.DependencyInjection.csproj", "{D10E0187-60AC-4AFF-90C3-074D7536B3B4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F706FD75-D134-4CAA-8C78-E58BDA1D0DF7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhonePresenceBot.Tests", "tests\PhonePresenceBot.Tests\PhonePresenceBot.Tests.csproj", "{A2537783-CB7E-4124-A9A3-585B32C181F1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F070F651-D98D-4FB6-AC9A-528BEDAD899E} = {CBBE967F-E9E7-40EB-B715-DC25E8B934F1}
+		{DB9609EB-2572-4B4B-B8C9-8429A8ACD5F6} = {CBBE967F-E9E7-40EB-B715-DC25E8B934F1}
+		{6F3C4A2B-7A92-460F-A347-101D6101CC9A} = {CBBE967F-E9E7-40EB-B715-DC25E8B934F1}
+		{2A3ADA74-AC53-4199-96D6-0B8BE15D739D} = {CBBE967F-E9E7-40EB-B715-DC25E8B934F1}
+		{5D8CFF39-D238-479A-97C3-10C8FAC2801D} = {CBBE967F-E9E7-40EB-B715-DC25E8B934F1}
+		{C97DF44B-B10A-4D67-85A1-F165E4966CA8} = {CBBE967F-E9E7-40EB-B715-DC25E8B934F1}
+		{D10E0187-60AC-4AFF-90C3-074D7536B3B4} = {CBBE967F-E9E7-40EB-B715-DC25E8B934F1}
+		{A2537783-CB7E-4124-A9A3-585B32C181F1} = {F706FD75-D134-4CAA-8C78-E58BDA1D0DF7}
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F070F651-D98D-4FB6-AC9A-528BEDAD899E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F070F651-D98D-4FB6-AC9A-528BEDAD899E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F070F651-D98D-4FB6-AC9A-528BEDAD899E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F070F651-D98D-4FB6-AC9A-528BEDAD899E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB9609EB-2572-4B4B-B8C9-8429A8ACD5F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB9609EB-2572-4B4B-B8C9-8429A8ACD5F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB9609EB-2572-4B4B-B8C9-8429A8ACD5F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB9609EB-2572-4B4B-B8C9-8429A8ACD5F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F3C4A2B-7A92-460F-A347-101D6101CC9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F3C4A2B-7A92-460F-A347-101D6101CC9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F3C4A2B-7A92-460F-A347-101D6101CC9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F3C4A2B-7A92-460F-A347-101D6101CC9A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A3ADA74-AC53-4199-96D6-0B8BE15D739D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A3ADA74-AC53-4199-96D6-0B8BE15D739D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A3ADA74-AC53-4199-96D6-0B8BE15D739D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A3ADA74-AC53-4199-96D6-0B8BE15D739D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D8CFF39-D238-479A-97C3-10C8FAC2801D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D8CFF39-D238-479A-97C3-10C8FAC2801D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D8CFF39-D238-479A-97C3-10C8FAC2801D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D8CFF39-D238-479A-97C3-10C8FAC2801D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C97DF44B-B10A-4D67-85A1-F165E4966CA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C97DF44B-B10A-4D67-85A1-F165E4966CA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C97DF44B-B10A-4D67-85A1-F165E4966CA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C97DF44B-B10A-4D67-85A1-F165E4966CA8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D10E0187-60AC-4AFF-90C3-074D7536B3B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D10E0187-60AC-4AFF-90C3-074D7536B3B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D10E0187-60AC-4AFF-90C3-074D7536B3B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D10E0187-60AC-4AFF-90C3-074D7536B3B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2537783-CB7E-4124-A9A3-585B32C181F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2537783-CB7E-4124-A9A3-585B32C181F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2537783-CB7E-4124-A9A3-585B32C181F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2537783-CB7E-4124-A9A3-585B32C181F1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
