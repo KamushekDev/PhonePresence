@@ -22,7 +22,7 @@ jobs:
                     && echo "version=$version" >> $GITHUB_ENV
         shell: bash
       - id: output-step
-        run: echo "version=$(echo presence${{ env.version }})" >> $GITHUB_OUTPUT
+        run: echo "version=$(echo {{ env.version }})" >> $GITHUB_OUTPUT
         shell: bash
         
   dotnet:
