@@ -21,8 +21,6 @@ jobs:
           version="$(date +'%Y.%m.%d').${{ github.run_number }}${{ github.run_attempt }}" \
                     && echo "version=$version" >> $GITHUB_ENV
         shell: bash
-      - run: echo "Generated version = ${{ env.version }}"
-        shell: bash
       - id: output-step
         run: echo "version=$(echo presence${{ env.version }})" >> $GITHUB_OUTPUT
         shell: bash
