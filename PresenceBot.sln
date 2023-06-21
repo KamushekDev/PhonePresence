@@ -26,6 +26,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PresenceBot.Tests", "tests\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PresenceBot.Services", "src\PresenceBot.Services\PresenceBot.Services.csproj", "{16073E53-EF16-40EB-ABF2-9AE6B8B32AEC}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{4D011AB4-8663-4800-9CE1-ACCB54104E39}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\deploy.yaml = .github\workflows\deploy.yaml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

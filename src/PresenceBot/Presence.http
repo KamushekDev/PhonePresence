@@ -1,6 +1,6 @@
-GET http://localhost:5000/client
+GET http://localhost:5051/client
 
 ###
-GET http://localhost:5000/client/Kamushek-S21-Ultra
+GET http://localhost:5051/client/Kamushek-S21-Ultra
 
 ###

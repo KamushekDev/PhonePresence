@@ -12,8 +12,6 @@ builder.Services
     .AddHealthChecks()
     .AddCheck("live", _ => HealthCheckResult.Healthy());
 
-// builder.Services.AddHostedService<>();
-
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
