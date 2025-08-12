@@ -18,7 +18,7 @@ public class PhonePresenceHandler : IQueryHandler<PhonePresenceHandler.Query, On
     public async Task<OneOf<ClientPresentedResponse, ClientWasPresentedResponse, ClientWasNeverPresentedResponse>>
         Handle(Query query, CancellationToken token)
     {
-        const string PhoneIdentity = "Kamushek-S21-Ultra";
+        const string PhoneIdentity = "Kirill-s-S25-Ultra";
         TimeSpan onlineThreshold = TimeSpan.FromMinutes(2);
 
         // todo: filter by userid
