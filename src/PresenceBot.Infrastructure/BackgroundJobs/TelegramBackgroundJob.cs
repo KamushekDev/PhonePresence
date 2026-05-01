@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using PresenceBot.Core;
 using PresenceBot.Infrastructure.Telegram;
 using PresenceBot.Infrastructure.Telegram.Options;
 using PresenceBot.Services.Presence;
@@ -81,7 +82,7 @@ public class TelegramBackgroundJob : IHostedService
                         switch (message.EntityValues!.First())
                         {
                             case BotCommands.CheckPhoneCommand:
-                                var request = new PhonePresenceHandler.Query() { FromUserId = fromId.Value };
+                                var request = new PhonePresenceHandler.Query() { ClientIdentity = MyConstants.PhoneName, ConfidenceInterval = MyConstants.ConfidenceInterval};
                                 var result = await queryDispatcher.Dispatch(request, token);
 
                                 await result.Match(
@@ -121,10 +122,9 @@ public class TelegramBackgroundJob : IHostedService
 
     private async Task SetupCommands(ITelegramBotClient client, CancellationToken token)
     {
-        await client.SetMyCommandsAsync(new[]
-        {
-            BotCommands.CheckPhone,
-        }, cancellationToken: token);
+        await client.SetMyCommands([
+            BotCommands.CheckPhone
+        ], cancellationToken: token);
     }
 
     private async Task Reply(
@@ -133,12 +133,17 @@ public class TelegramBackgroundJob : IHostedService
         string message,
         CancellationToken token)
     {
-        await client.SendTextMessageAsync(
+        await client.SendMessage(
             originalMessage.Chat.Id,
             message,
-            replyToMessageId: originalMessage.MessageId,
-            replyMarkup:
-            new ReplyKeyboardMarkup(new[] { new KeyboardButton("/phone"), new KeyboardButton("Телефон дома?") }),
+            replyParameters: new ReplyParameters()
+            {
+                MessageId = originalMessage.MessageId,
+            },
+            replyMarkup: new ReplyKeyboardMarkup(
+                new KeyboardButton("/phone"),
+                new KeyboardButton("Телефон дома?")
+            ),
             // new ForceReplyMarkup() { InputFieldPlaceholder = "Телефон дома?" },
             cancellationToken: token);
     }

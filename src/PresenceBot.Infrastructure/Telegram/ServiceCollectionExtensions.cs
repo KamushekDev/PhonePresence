@@ -13,7 +13,7 @@ public static class ServiceCollectionExtensions
             services.Configure(configure);
 
         // todo: add interface
-        services.AddSingleton<TelegramService>();
+        // services.AddSingleton<TelegramService>();
 
         services.AddHostedService<TelegramBackgroundJob>();
 

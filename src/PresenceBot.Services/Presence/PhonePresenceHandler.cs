@@ -18,13 +18,9 @@ public class PhonePresenceHandler : IQueryHandler<PhonePresenceHandler.Query, On
     public async Task<OneOf<ClientPresentedResponse, ClientWasPresentedResponse, ClientWasNeverPresentedResponse>>
         Handle(Query query, CancellationToken token)
     {
-        const string PhoneIdentity = "Kirill-s-S25-Ultra";
-        TimeSpan onlineThreshold = TimeSpan.FromMinutes(2);
-
         // todo: filter by userid
 
-        // todo: get current phone name from config/db
-        var clientName = PhoneIdentity;
+        var clientName = query.ClientIdentity;
 
         var info = await _repository.FindByIdentity(clientName, token);
         if (info is null)
@@ -33,7 +29,7 @@ public class PhonePresenceHandler : IQueryHandler<PhonePresenceHandler.Query, On
                 ClientIdentity = clientName
             };
 
-        if ((DateTimeOffset.Now - info.LastAvailableAt) > onlineThreshold)
+        if ((DateTimeOffset.Now - info.LastAvailableAt) > query.ConfidenceInterval)
             return new ClientWasPresentedResponse()
             {
                 ClientIdentity = clientName,
@@ -49,7 +45,8 @@ public class PhonePresenceHandler : IQueryHandler<PhonePresenceHandler.Query, On
     public class
         Query : IQuery<OneOf<ClientPresentedResponse, ClientWasPresentedResponse, ClientWasNeverPresentedResponse>>
     {
-        public long FromUserId { get; init; }
+        public string ClientIdentity { get; init; }
+        public TimeSpan ConfidenceInterval { get; init; }
     }
 
     public sealed class ClientPresentedResponse
