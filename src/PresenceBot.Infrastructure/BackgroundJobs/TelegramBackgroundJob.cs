@@ -8,6 +8,7 @@ using PresenceBot.Infrastructure.Telegram;
 using PresenceBot.Infrastructure.Telegram.Options;
 using PresenceBot.Services.Presence;
 using Telegram.Bot;
+using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -17,6 +18,7 @@ namespace PresenceBot.Infrastructure.BackgroundJobs;
 public class TelegramBackgroundJob : IHostedService
 {
     private readonly IServiceProvider _serviceProvider;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<TelegramBackgroundJob> _logger;
 
     private CancellationTokenSource? _cts;
@@ -24,9 +26,11 @@ public class TelegramBackgroundJob : IHostedService
 
     public TelegramBackgroundJob(
         IServiceProvider serviceProvider,
+        IHttpClientFactory httpClientFactory,
         ILogger<TelegramBackgroundJob> logger)
     {
         _serviceProvider = serviceProvider;
+        _httpClientFactory = httpClientFactory;
         _logger = logger;
     }
 
@@ -40,16 +44,27 @@ public class TelegramBackgroundJob : IHostedService
             .GetRequiredService<IOptionsSnapshot<TelegramOptions>>()
             .Value;
 
-        var client = new TelegramBotClient(options.ApiKey);
-        await SetupCommands(client, startToken);
-        _worker = client.ReceiveAsync(HandleUpdate, HandlePollError, cancellationToken: _cts.Token);
+        var httpClient = _httpClientFactory.CreateClient("WithProxy");
+
+        var client = new TelegramBotClient(options.ApiKey, httpClient);
+
+        _logger.LogInformation("Starting telegram job");
+        var isValidToken = await client.TestApi(_cts.Token);
+        if (!isValidToken)
+            throw new Exception("Invalid token");
+        _logger.LogInformation("Telegram token is validated");
+        
+        await SetupCommands(client, _cts.Token);
+        _logger.LogInformation("Telegram set up commands");
+        _worker = client.ReceiveAsync(HandleUpdate, HandlePollError, receiverOptions: new ReceiverOptions(){},cancellationToken: _cts.Token);
+        _logger.LogInformation("Telegram job is started successfully");
     }
 
     public Task StopAsync(CancellationToken token)
     {
         _cts?.Cancel();
 
-        return Task.CompletedTask;
+        return _worker ?? Task.CompletedTask;
     }
 
     private async Task HandleUpdate(ITelegramBotClient client, Update update, CancellationToken token)
@@ -133,7 +148,7 @@ public class TelegramBackgroundJob : IHostedService
         string message,
         CancellationToken token)
     {
-        await client.SendMessage(
+        var sentMessage = await client.SendMessage(
             originalMessage.Chat.Id,
             message,
             replyParameters: new ReplyParameters()
@@ -141,10 +156,11 @@ public class TelegramBackgroundJob : IHostedService
                 MessageId = originalMessage.MessageId,
             },
             replyMarkup: new ReplyKeyboardMarkup(
-                new KeyboardButton("/phone"),
-                new KeyboardButton("Телефон дома?")
+                new KeyboardButton(BotCommands.CheckPhoneCommand)
             ),
             // new ForceReplyMarkup() { InputFieldPlaceholder = "Телефон дома?" },
             cancellationToken: token);
+        
+        _logger.LogInformation("Sent message {@Message}", sentMessage);
     }
 }

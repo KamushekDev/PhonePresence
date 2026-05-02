@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Net;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PresenceBot.Infrastructure.Database;
 using PresenceBot.Infrastructure.MessageBus;
@@ -43,6 +44,24 @@ public static class ServiceCollectionExtensions
             })
             .AddServices();
 
+        services.AddProxyClient();
+        
+        return services;
+    }
+
+    private static IServiceCollection AddProxyClient(this IServiceCollection services)
+    {
+        services
+            .AddHttpClient("WithProxy")
+            .ConfigurePrimaryHttpMessageHandler(() =>
+            {
+                var proxy = new WebProxy
+                {
+                    Address = new Uri("socks5://192.168.1.2:10808"),
+                };
+                return new HttpClientHandler(){Proxy = proxy};
+            });
+        
         return services;
     }
 }

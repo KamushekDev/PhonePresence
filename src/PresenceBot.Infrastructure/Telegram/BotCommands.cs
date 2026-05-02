@@ -4,7 +4,7 @@ namespace PresenceBot.Infrastructure.Telegram
 {
     public static class BotCommands
     {
-        public const string CheckPhoneCommand = "/phone";
+        public const string CheckPhoneCommand = "/check_phone";
 
         public static BotCommand CheckPhone => new()
         {
