@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using PresenceBot.Core.Telegram;
 using PresenceBot.Infrastructure.BackgroundJobs;
 using PresenceBot.Infrastructure.Telegram.Options;
 
@@ -13,6 +14,8 @@ public static class ServiceCollectionExtensions
             .BindConfiguration(TelegramOptions.SectionName);
         
         services.AddHostedService<TelegramBackgroundJob>();
+        
+        services.AddSingleton<IMyTelegramClient, MyTelegramClient>();
 
         return services;
     }

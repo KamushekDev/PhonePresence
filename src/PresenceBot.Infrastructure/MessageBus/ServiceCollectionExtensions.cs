@@ -10,8 +10,12 @@ public static class ServiceCollectionExtensions
     {
         const int presenceBusCapacity = 100;
 
-        services.AddSingleton<IMessageBus<PresenceInfo>, MessageBus<PresenceInfo>>(
-            _ => new MessageBus<PresenceInfo>(presenceBusCapacity)
+        services.AddSingleton<IMessageBus<PresenceInfo>, MessageBus<PresenceInfo>>(_ =>
+            new MessageBus<PresenceInfo>(presenceBusCapacity)
+        );
+
+        services.AddSingleton<IMessageBus<PresenceNotification>, MessageBus<PresenceNotification>>(_ =>
+            new MessageBus<PresenceNotification>(presenceBusCapacity)
         );
 
         return services;

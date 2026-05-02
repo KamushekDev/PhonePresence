@@ -4,13 +4,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PresenceBot.Core;
 using PresenceBot.Core.Messages;
+using PresenceBot.Core.Notifications;
+using PresenceBot.Core.Notifications.Models;
+using PresenceBot.Core.Vk;
 using PresenceBot.Infrastructure.Presence.Options;
 using PresenceBot.Infrastructure.Telegram;
-using PresenceBot.Infrastructure.VK.Options;
 using PresenceBot.Services.Presence;
-using VkNet;
 using VkNet.Enums.StringEnums;
 using VkNet.Model;
 
@@ -26,33 +26,13 @@ public class VkBackgroundJob(
         {
             try
             {
-                var options = serviceProvider
-                    .CreateAsyncScope()
-                    .ServiceProvider
-                    .GetRequiredService<IOptionsSnapshot<VkOptions>>()
-                    .Value;
-
-                logger.LogInformation("Starting VK job");
-
-                var api = new VkApi();
-
-                await api.AuthorizeAsync(new ApiAuthParams()
-                {
-                    AccessToken = options.ApiKey
-                }, stoppingToken);
-
-                logger.LogInformation("VK API authorized");
-
-                var server = api.Groups.GetLongPollServer(options.GroupId);
+                await using var scope = serviceProvider.CreateAsyncScope();
+                var client = scope.ServiceProvider.GetRequiredService<IMyVkClient>();
+                var server = await client.StartAsync(stoppingToken);
 
                 while (!stoppingToken.IsCancellationRequested)
                 {
-                    var poll = api.Groups.GetBotsLongPollHistory(new BotsLongPollHistoryParams
-                    {
-                        Server = server.Server,
-                        Key = server.Key,
-                        Ts = server.Ts
-                    });
+                    var poll = await client.GetUpdates(server,  stoppingToken);
 
                     server.Ts = poll.Ts;
 
@@ -61,11 +41,11 @@ public class VkBackgroundJob(
                         if (update.Type.Value == GroupUpdateType.MessageNew)
                         {
                             if (update.Instance is MessageNew message)
-                                await HandleMessage(api, message, stoppingToken);
+                                await HandleMessage(client, message, stoppingToken);
                         }
                     }
 
-                    await Task.Delay(500, stoppingToken);
+                    await Task.Delay(50, stoppingToken);
                 }
             }
             catch (Exception e)
@@ -76,7 +56,7 @@ public class VkBackgroundJob(
     }
 
     private async Task HandleMessage(
-        VkApi api,
+        IMyVkClient api,
         MessageNew message,
         CancellationToken token)
     {
@@ -108,12 +88,19 @@ public class VkBackgroundJob(
 
                 await result.Match(
                     presented => Reply(messageFormatter.GetActiveClientMessage(), message.Message, api, token),
-                    wasPresented => Reply(messageFormatter.GetInactiveClientMessage(wasPresented.ElapsedTime),
-                        message.Message, api, token),
-                    wasNeverPresented => Reply(
-                        messageFormatter.GetNeverActiveClient(wasNeverPresented.ClientIdentity),
-                        message.Message, api, token)
-                );
+                    async wasPresented =>
+                    {
+                        await Reply(messageFormatter.GetInactiveClientMessage(wasPresented.ElapsedTime),
+                            message.Message, api, token);
+                        await AddNotificationRequest(scope, message.Message, wasPresented.ClientIdentity, token);
+                    },
+                    async wasNeverPresented =>
+                    {
+                        await Reply(
+                            messageFormatter.GetNeverActiveClient(wasNeverPresented.ClientIdentity),
+                            message.Message, api, token);
+                        await AddNotificationRequest(scope, message.Message, wasNeverPresented.ClientIdentity, token);
+                    });
             }
                 break;
 
@@ -123,27 +110,22 @@ public class VkBackgroundJob(
         }
     }
 
-    private async Task Reply(string text, Message message, VkApi api, CancellationToken token)
+    private async Task Reply(string text, Message message, IMyVkClient api, CancellationToken token)
     {
-        var action = new MessageKeyboardButtonAction()
+        await api.Reply(new VkReplyData(message.PeerId.Value, message.Id.Value), text, token);
+    }
+    
+    private async Task AddNotificationRequest(AsyncServiceScope scope, Message message, string argClientIdentity,
+        CancellationToken token)
+    {
+        var notificationRepository = scope.ServiceProvider.GetRequiredService<IPresenceNotificationsRepository>();
+        
+        await notificationRepository.AddRequest(new NotificationRequest()
         {
-            Label = "Телефон дома?",
-            Payload = JsonSerializer.Serialize(new VkMessagePayload(BotCommands.CheckPhoneCommand)),
-            Type = KeyboardButtonActionType.Text
-        };
-        var keyboard = new KeyboardBuilder()
-            .AddButton(action, KeyboardButtonColor.Primary)
-            .Build();
-
-        await api.Messages.SendAsync(new MessagesSendParams
-        {
-            PeerId = message.PeerId,
-            RandomId = Environment.TickCount,
-            Message = text,
-            ReplyTo = message.Id,
-            Keyboard = keyboard
+            ClientIdentity = argClientIdentity,
+            Source = NotificationSource.Vk,
+            ReplyData = JsonSerializer.Serialize(new VkReplyData(message.PeerId.Value, message.Id.Value))
         }, token);
     }
 }
 
-file record struct VkMessagePayload(string Command);

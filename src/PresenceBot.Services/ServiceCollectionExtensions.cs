@@ -10,6 +10,8 @@ public static class ServiceCollectionExtensions
         services
             .AddComandate(typeof(IServicesAssemblyMarker).Assembly);
 
+        services.AddSingleton(TimeProvider.System);
+
         return services;
     }
 }

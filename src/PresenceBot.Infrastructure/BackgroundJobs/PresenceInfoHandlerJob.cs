@@ -1,26 +1,33 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using PresenceBot.Core.MessageBus;
 using PresenceBot.Core.Presence;
 using PresenceBot.Core.Presence.Models;
+using PresenceBot.Infrastructure.Presence.Options;
 
 namespace PresenceBot.Infrastructure.BackgroundJobs;
 
 public class PresenceInfoHandlerJob : IHostedService
 {
     private readonly IMessageBus<PresenceInfo> _messageBus;
+    private readonly IMessageBus<PresenceNotification> _notificationBus;
     private readonly IServiceProvider _serviceProvider;
+    private readonly TimeProvider _timeProvider;
     private readonly ILogger<PresenceInfoHandlerJob> _logger;
 
     private Task? _worker;
     private CancellationTokenSource? _cts;
 
-    public PresenceInfoHandlerJob(IMessageBus<PresenceInfo> messageBus, IServiceProvider serviceProvider,
+    public PresenceInfoHandlerJob(IMessageBus<PresenceInfo> messageBus,
+        IMessageBus<PresenceNotification> notificationBus, IServiceProvider serviceProvider, TimeProvider timeProvider,
         ILogger<PresenceInfoHandlerJob> logger)
     {
         _messageBus = messageBus;
+        _notificationBus = notificationBus;
         _serviceProvider = serviceProvider;
+        _timeProvider = timeProvider;
         _logger = logger;
     }
 
@@ -63,10 +70,14 @@ public class PresenceInfoHandlerJob : IHostedService
             return;
         }
 
-        var repository = _serviceProvider
-            .CreateAsyncScope()
+        await using var scope = _serviceProvider.CreateAsyncScope();
+        var repository = scope
             .ServiceProvider
             .GetRequiredService<IClientPresenceRepository>();
+
+        var presenceOptions = scope.ServiceProvider
+            .GetRequiredService<IOptionsSnapshot<PresenceOptions>>()
+            .Value;
 
         var client = await repository.FindByIdentity(message.Client.Identity, token);
         if (client is null)
@@ -79,9 +90,16 @@ public class PresenceInfoHandlerJob : IHostedService
             };
             await repository.AddClientPresence(request, token);
             _logger.LogDebug("Created new client entry for {Identity}", message.Client.Identity);
+            await _notificationBus.Publish(
+                new PresenceNotification(new ClientFirstAppearanceNotification(message.Client.Identity)), token);
         }
         else
         {
+            var moment = _timeProvider.GetUtcNow();
+            if (client.LastAvailableAt.Add(presenceOptions.WantedConfidenceInterval) < moment)
+                await _notificationBus.Publish(
+                    new PresenceNotification(new ClientBecameActiveNotification(message.Client.Identity, moment,
+                        moment - client.LastAvailableAt)), token);
             await repository.UpdateLastAvailableAt(client.Identity, message.Moment, token);
             _logger.LogDebug("Updated client entry for {Identity}", message.Client.Identity);
         }

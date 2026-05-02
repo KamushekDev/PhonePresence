@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using PresenceBot.Core.Notifications.Models;
 using PresenceBot.Infrastructure.Database.Models;
 
 namespace PresenceBot.Infrastructure.Database;
@@ -8,6 +9,8 @@ public class PresenceContext : DbContext
     public PresenceContext(DbContextOptions<PresenceContext> options) : base(options) { }
 
     public required DbSet<ClientPresenceModel> Clients { get; init; }
+    
+    public required DbSet<NotificationRequest> NotificationRequests { get; init; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

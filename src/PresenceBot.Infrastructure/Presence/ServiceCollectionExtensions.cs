@@ -29,6 +29,9 @@ public static class ServiceCollectionExtensions
 
         services.AddTransient<IClientPresenceRepository, ClientPresenceRepository>();
 
+        services
+            .AddHostedService<PresenceNotificationJob>();
+
         return services;
     }
 }

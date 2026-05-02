@@ -15,6 +15,7 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageVersion Include="OneOf" Version="3.0.271" />
+    <PackageVersion Include="OneOf.SourceGenerator" Version="3.0.271" />
     <PackageVersion Include="Telegram.Bot" Version="22.9.6.2" />
     <PackageVersion Include="VkNet" Version="1.78.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />

@@ -2,6 +2,10 @@
 
     <ItemGroup>
       <PackageReference Include="LinqSpecs" />
+      <PackageReference Include="OneOf" />
+      <PackageReference Include="OneOf.SourceGenerator" />
+      <PackageReference Include="Telegram.Bot" />
+      <PackageReference Include="VkNet" />
     </ItemGroup>
 
 </Project>

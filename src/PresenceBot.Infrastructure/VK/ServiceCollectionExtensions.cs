@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using PresenceBot.Core.Vk;
 using PresenceBot.Infrastructure.BackgroundJobs;
 using PresenceBot.Infrastructure.VK.Options;
 
@@ -14,6 +15,9 @@ public static class ServiceCollectionExtensions
 
         services
             .AddHostedService<VkBackgroundJob>();
+
+        services
+            .AddSingleton<IMyVkClient, MyVkClient>();
         
         return services;
     }

@@ -1,25 +1,23 @@
-﻿using Comandante;
+﻿using System.Text.Json;
+using Comandante;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PresenceBot.Core;
 using PresenceBot.Core.Messages;
+using PresenceBot.Core.Notifications;
+using PresenceBot.Core.Notifications.Models;
+using PresenceBot.Core.Telegram;
 using PresenceBot.Infrastructure.Presence.Options;
 using PresenceBot.Infrastructure.Telegram;
-using PresenceBot.Infrastructure.Telegram.Options;
 using PresenceBot.Services.Presence;
-using Telegram.Bot;
-using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace PresenceBot.Infrastructure.BackgroundJobs;
 
 public class TelegramBackgroundJob(
     IServiceProvider serviceProvider,
-    IHttpClientFactory httpClientFactory,
     ILogger<TelegramBackgroundJob> logger)
     : BackgroundService
 {
@@ -29,26 +27,11 @@ public class TelegramBackgroundJob(
         {
             try
             {
-                var options = serviceProvider
-                    .CreateAsyncScope()
-                    .ServiceProvider
-                    .GetRequiredService<IOptionsSnapshot<TelegramOptions>>()
-                    .Value;
+                await using var scope = serviceProvider.CreateAsyncScope();     
+                var client =  scope.ServiceProvider.GetRequiredService<IMyTelegramClient>();
+                await client.StartAsync(stoppingToken);
 
-                var httpClient = httpClientFactory.CreateClient("WithProxy");
-
-                var client = new TelegramBotClient(options.ApiKey, httpClient);
-
-                logger.LogInformation("Starting telegram job");
-                var isValidToken = await client.TestApi(stoppingToken);
-                if (!isValidToken)
-                    throw new Exception("Invalid token");
-                logger.LogInformation("Telegram token is validated");
-
-                await SetupCommands(client, stoppingToken);
-                logger.LogInformation("Telegram set up commands");
-                await client.ReceiveAsync(HandleUpdate, HandlePollError, receiverOptions: new ReceiverOptions(),
-                    cancellationToken: stoppingToken);
+                await client.ReceiveAsync(HandleUpdate, stoppingToken);
             }
             catch (Exception e)
             {
@@ -58,7 +41,7 @@ public class TelegramBackgroundJob(
         }
     }
 
-    private async Task HandleUpdate(ITelegramBotClient client, Update update, CancellationToken token)
+    private async Task HandleUpdate(IMyTelegramClient client, Update update, CancellationToken token)
     {
         logger.LogDebug("Received update with id: {UpdateId}", update.Id);
         switch (update.Type)
@@ -103,19 +86,25 @@ public class TelegramBackgroundJob(
                                 
                                 await result.Match(
                                     presented => Reply(client, message, messageFormatter.GetActiveClientMessage(), token),
-                                    wasPresented => Reply(client, message,
-                                       messageFormatter.GetInactiveClientMessage(wasPresented.ElapsedTime),
-                                        token),
-                                    wasNeverPresented => Reply(client, message,
-                                        messageFormatter.GetNeverActiveClient(wasNeverPresented.ClientIdentity),
-                                        token)
-                                );
+                                    async wasPresented =>
+                                    {
+                                        await Reply(client, message,
+                                            messageFormatter.GetInactiveClientMessage(wasPresented.ElapsedTime),
+                                            token);
+                                        await AddNotificationRequest(scope, message, wasPresented.ClientIdentity, token);
+                                    },
+                                    async wasNeverPresented =>
+                                    {
+                                        await Reply(client, message,
+                                            messageFormatter.GetNeverActiveClient(wasNeverPresented.ClientIdentity),
+                                            token);
+                                        await AddNotificationRequest(scope, message, wasNeverPresented.ClientIdentity, token);
+                                    });
                                 break;
                             default:
                                 await Reply(client, message, "Я понимаю только заготовленные команды :(", token);
                                 return;
                         }
-
                         break;
                     }
                     default:
@@ -131,38 +120,25 @@ public class TelegramBackgroundJob(
         }
     }
 
-    private Task HandlePollError(ITelegramBotClient client, Exception exception, CancellationToken token)
-    {
-        logger.LogError(exception, "Poll error occured");
-        return Task.CompletedTask;
-    }
-
-    private async Task SetupCommands(ITelegramBotClient client, CancellationToken token)
-    {
-        await client.SetMyCommands([
-            BotCommands.CheckPhone
-        ], cancellationToken: token);
-    }
-
     private async Task Reply(
-        ITelegramBotClient client,
+        IMyTelegramClient client,
         Message originalMessage,
         string message,
         CancellationToken token)
     {
-        var sentMessage = await client.SendMessage(
-            originalMessage.Chat.Id,
-            message,
-            replyParameters: new ReplyParameters()
-            {
-                MessageId = originalMessage.MessageId,
-            },
-            replyMarkup: new ReplyKeyboardMarkup(
-                new KeyboardButton(BotCommands.CheckPhoneCommand)
-            ),
-            // new ForceReplyMarkup() { InputFieldPlaceholder = "Телефон дома?" },
-            cancellationToken: token);
+        await client.ReplyAsync(new TelegramReplyData(originalMessage.Chat.Id, originalMessage.MessageId), message, token);
+    }                                                              
 
-        logger.LogDebug("Sent message {@Message}", sentMessage);
+    private async Task AddNotificationRequest(AsyncServiceScope scope, Message message, string argClientIdentity,
+        CancellationToken token)
+    {
+        var notificationRepository = scope.ServiceProvider.GetRequiredService<IPresenceNotificationsRepository>();
+        
+        await notificationRepository.AddRequest(new NotificationRequest()
+        {
+            ClientIdentity = argClientIdentity,
+            Source = NotificationSource.Telegram,
+            ReplyData = JsonSerializer.Serialize(new TelegramReplyData(message.Chat.Id, message.MessageId))
+        }, token);
     }
 }

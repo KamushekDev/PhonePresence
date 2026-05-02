@@ -1,10 +1,13 @@
 ﻿using System.Globalization;
+using Humanizer;
 using PresenceBot.Core.Messages;
 
 namespace PresenceBot.Infrastructure.Messages;
 
 public class MessageFormatter : IMessageFormatter
 {
+    private readonly static CultureInfo CultureInfo = new CultureInfo("ru-RU");
+
     public string GetActiveClientMessage()
     {
         return "Клиент в сети :)";
@@ -12,11 +15,27 @@ public class MessageFormatter : IMessageFormatter
 
     public string GetInactiveClientMessage(TimeSpan inactivityTimeSpan)
     {
-        return $"Клиент был в сети {Humanizer.TimeSpanHumanizeExtensions.Humanize(inactivityTimeSpan, culture: CultureInfo.CreateSpecificCulture("ru-ru"))} назад";
+        var humanizedTimeSpan = inactivityTimeSpan.Humanize(
+            minUnit: TimeUnit.Minute,
+            culture: CultureInfo);
+
+        return $"Клиент был в сети {humanizedTimeSpan} назад. Я пришлю уведомление, когда он появится в сети!";
     }
 
     public string GetNeverActiveClient(string clientIdentity)
     {
-        return $"К сети никогда не был подключён клиент с идентификатором `{clientIdentity}`";
+        return $"К сети никогда не был подключён клиент с идентификатором `{clientIdentity}`. Я пришлю уведомление, когда он появится в сети!";
+    }
+
+    public string GetBecameActiveNotification(DateTimeOffset lastActiveTimestamp, TimeSpan inactivityTimeSpan)
+    {
+        var timestamp = lastActiveTimestamp.Humanize(culture: CultureInfo);
+        var span = inactivityTimeSpan.Humanize(culture: CultureInfo);
+        return $"Клиент появился в сети {timestamp}. Вне сети клиент находился {span}.";
+    }
+
+    public string GetFirstAppearanceNotification(string clientIdentity)
+    {
+        return $"Клиент `{clientIdentity}` впервые появился в сети!";
     }
 }

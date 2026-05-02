@@ -7,9 +7,11 @@ public class MessageBus<T> : IMessageBus<T>
 {
     private readonly Channel<T> _channel;
 
-    public MessageBus(int capacity)
+    public MessageBus(int? capacity = null)
     {
-        _channel = Channel.CreateBounded<T>(capacity);
+        _channel = capacity.HasValue 
+            ? Channel.CreateBounded<T>(capacity.Value) 
+            : Channel.CreateUnbounded<T>();
     }
 
     public async Task Publish(T message, CancellationToken token)

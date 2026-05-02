@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PresenceBot.Infrastructure.Database;
 using PresenceBot.Infrastructure.MessageBus;
 using PresenceBot.Infrastructure.Messages;
+using PresenceBot.Infrastructure.Notifications;
 using PresenceBot.Infrastructure.Presence;
 using PresenceBot.Infrastructure.Proxy;
 using PresenceBot.Infrastructure.Telegram;
@@ -26,6 +27,7 @@ public static class ServiceCollectionExtensions
             .AddServices()
             .AddProxy()
             .AddMessageFormatter()
+            .AddPresenceNotifications()
             ;
         
         return services;
