@@ -11,6 +11,7 @@ FROM build AS publish
 RUN dotnet publish "PresenceBot.sln" -c Release -o /app/publish
 
 FROM base AS final
+RUN apk add --no-cache icu-libs icu-data-full
 WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "PresenceBot.dll"]
