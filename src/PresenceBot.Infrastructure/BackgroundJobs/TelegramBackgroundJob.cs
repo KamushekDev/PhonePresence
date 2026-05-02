@@ -4,6 +4,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PresenceBot.Core;
+using PresenceBot.Core.Messages;
+using PresenceBot.Infrastructure.Presence.Options;
 using PresenceBot.Infrastructure.Telegram;
 using PresenceBot.Infrastructure.Telegram.Options;
 using PresenceBot.Services.Presence;
@@ -15,61 +17,50 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace PresenceBot.Infrastructure.BackgroundJobs;
 
-public class TelegramBackgroundJob : IHostedService
+public class TelegramBackgroundJob(
+    IServiceProvider serviceProvider,
+    IHttpClientFactory httpClientFactory,
+    ILogger<TelegramBackgroundJob> logger)
+    : BackgroundService
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<TelegramBackgroundJob> _logger;
-
-    private CancellationTokenSource? _cts;
-    private Task? _worker;
-
-    public TelegramBackgroundJob(
-        IServiceProvider serviceProvider,
-        IHttpClientFactory httpClientFactory,
-        ILogger<TelegramBackgroundJob> logger)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _serviceProvider = serviceProvider;
-        _httpClientFactory = httpClientFactory;
-        _logger = logger;
-    }
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                var options = serviceProvider
+                    .CreateAsyncScope()
+                    .ServiceProvider
+                    .GetRequiredService<IOptionsSnapshot<TelegramOptions>>()
+                    .Value;
 
-    public async Task StartAsync(CancellationToken startToken)
-    {
-        _cts = new CancellationTokenSource();
+                var httpClient = httpClientFactory.CreateClient("WithProxy");
 
-        var options = _serviceProvider
-            .CreateAsyncScope()
-            .ServiceProvider
-            .GetRequiredService<IOptionsSnapshot<TelegramOptions>>()
-            .Value;
+                var client = new TelegramBotClient(options.ApiKey, httpClient);
 
-        var httpClient = _httpClientFactory.CreateClient("WithProxy");
+                logger.LogInformation("Starting telegram job");
+                var isValidToken = await client.TestApi(stoppingToken);
+                if (!isValidToken)
+                    throw new Exception("Invalid token");
+                logger.LogInformation("Telegram token is validated");
 
-        var client = new TelegramBotClient(options.ApiKey, httpClient);
-
-        _logger.LogInformation("Starting telegram job");
-        var isValidToken = await client.TestApi(_cts.Token);
-        if (!isValidToken)
-            throw new Exception("Invalid token");
-        _logger.LogInformation("Telegram token is validated");
-        
-        await SetupCommands(client, _cts.Token);
-        _logger.LogInformation("Telegram set up commands");
-        _worker = client.ReceiveAsync(HandleUpdate, HandlePollError, receiverOptions: new ReceiverOptions(){},cancellationToken: _cts.Token);
-        _logger.LogInformation("Telegram job is started successfully");
-    }
-
-    public Task StopAsync(CancellationToken token)
-    {
-        _cts?.Cancel();
-
-        return _worker ?? Task.CompletedTask;
+                await SetupCommands(client, stoppingToken);
+                logger.LogInformation("Telegram set up commands");
+                await client.ReceiveAsync(HandleUpdate, HandlePollError, receiverOptions: new ReceiverOptions(),
+                    cancellationToken: stoppingToken);
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Error in telegram job");
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            }
+        }
     }
 
     private async Task HandleUpdate(ITelegramBotClient client, Update update, CancellationToken token)
     {
-        _logger.LogDebug("Received update with id: {UpdateId}", update.Id);
+        logger.LogDebug("Received update with id: {UpdateId}", update.Id);
         switch (update.Type)
         {
             case UpdateType.Message:
@@ -88,25 +79,35 @@ public class TelegramBackgroundJob : IHostedService
                         message.Entities is not null
                         && message.Entities.Length == 1
                         && message.Entities.All(x => x.Type is MessageEntityType.BotCommand):
-
-                        var queryDispatcher = _serviceProvider
-                            .CreateAsyncScope()
+                    {
+                        await using var scope = serviceProvider.CreateAsyncScope();
+                        var queryDispatcher = scope
                             .ServiceProvider
                             .GetRequiredService<IQueryDispatcher>();
+
+                        var presenceOptions = scope.ServiceProvider
+                            .GetRequiredService<IOptionsSnapshot<PresenceOptions>>()
+                            .Value;
 
                         switch (message.EntityValues!.First())
                         {
                             case BotCommands.CheckPhoneCommand:
-                                var request = new PhonePresenceHandler.Query() { ClientIdentity = MyConstants.PhoneName, ConfidenceInterval = MyConstants.ConfidenceInterval};
+                                var request = new PhonePresenceHandler.Query()
+                                {
+                                    ClientIdentity = presenceOptions.WantedClientIdentity,
+                                    ConfidenceInterval = presenceOptions.WantedConfidenceInterval
+                                };
                                 var result = await queryDispatcher.Dispatch(request, token);
 
+                                var messageFormatter = scope.ServiceProvider.GetRequiredService<IMessageFormatter>();
+                                
                                 await result.Match(
-                                    presented => Reply(client, message, "Клиент сейчас в сети :)", token),
+                                    presented => Reply(client, message, messageFormatter.GetActiveClientMessage(), token),
                                     wasPresented => Reply(client, message,
-                                        $"Клиент был в сети {(int)wasPresented.ElapsedTime.TotalMinutes} минут назад",
+                                       messageFormatter.GetInactiveClientMessage(wasPresented.ElapsedTime),
                                         token),
                                     wasNeverPresented => Reply(client, message,
-                                        $"К сети никогда не был подключён клиент с идентификатором {wasNeverPresented.ClientIdentity}",
+                                        messageFormatter.GetNeverActiveClient(wasNeverPresented.ClientIdentity),
                                         token)
                                 );
                                 break;
@@ -116,6 +117,7 @@ public class TelegramBackgroundJob : IHostedService
                         }
 
                         break;
+                    }
                     default:
                         await Reply(client, message, "Я понимаю только текстовые сообщения :(", token);
                         return;
@@ -123,7 +125,7 @@ public class TelegramBackgroundJob : IHostedService
 
                 break;
             default:
-                _logger.LogDebug("Skipped update with id {UpdateId} because of type {UpdateType}", update.Id,
+                logger.LogDebug("Skipped update with id {UpdateId} because of type {UpdateType}", update.Id,
                     update.Type);
                 return;
         }
@@ -131,7 +133,7 @@ public class TelegramBackgroundJob : IHostedService
 
     private Task HandlePollError(ITelegramBotClient client, Exception exception, CancellationToken token)
     {
-        _logger.LogError(exception, "Poll error occured");
+        logger.LogError(exception, "Poll error occured");
         return Task.CompletedTask;
     }
 
@@ -160,7 +162,7 @@ public class TelegramBackgroundJob : IHostedService
             ),
             // new ForceReplyMarkup() { InputFieldPlaceholder = "Телефон дома?" },
             cancellationToken: token);
-        
-        _logger.LogInformation("Sent message {@Message}", sentMessage);
+
+        logger.LogDebug("Sent message {@Message}", sentMessage);
     }
 }

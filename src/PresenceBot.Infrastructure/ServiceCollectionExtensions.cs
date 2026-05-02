@@ -1,10 +1,12 @@
-﻿using System.Net;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PresenceBot.Infrastructure.Database;
 using PresenceBot.Infrastructure.MessageBus;
+using PresenceBot.Infrastructure.Messages;
 using PresenceBot.Infrastructure.Presence;
+using PresenceBot.Infrastructure.Proxy;
 using PresenceBot.Infrastructure.Telegram;
+using PresenceBot.Infrastructure.VK;
 using PresenceBot.Services;
 
 namespace PresenceBot.Infrastructure;
@@ -15,52 +17,16 @@ public static class ServiceCollectionExtensions
     {
         services.AddDatabase(configuration);
 
-        var settings = configuration.GetSection(Settings.SectionName).Get<Settings>();
-
-        // todo: real validation and exception
-        if (settings is null)
-            throw new Exception("");
-
-        services.AddPresenceService(
-            configureRouter: options =>
-            {
-                options.RouterUri = new Uri(settings.Router.Uri);
-                options.Login = settings.Router.Login;
-                options.Password = settings.Router.Password;
-            },
-            configurePresence: options =>
-            {
-                options.ShouldCheckWithPing = settings.Presence.ShouldCheckWithPing;
-                options.PingTimeoutMs = settings.Presence.PingTimeoutMs;
-            });
-
-        services.AddMessageBus();
+        services.AddPresenceService();
 
         services
-            .AddTelegram(configure: options =>
-            {
-                // do not inline this, RIDER 
-                options.ApiKey = settings.Telegram.ApiKey;
-            })
-            .AddServices();
-
-        services.AddProxyClient();
-        
-        return services;
-    }
-
-    private static IServiceCollection AddProxyClient(this IServiceCollection services)
-    {
-        services
-            .AddHttpClient("WithProxy")
-            .ConfigurePrimaryHttpMessageHandler(() =>
-            {
-                var proxy = new WebProxy
-                {
-                    Address = new Uri("socks5://192.168.1.2:10808"),
-                };
-                return new HttpClientHandler(){Proxy = proxy};
-            });
+            .AddTelegram()
+            .AddVkontakte()
+            .AddMessageBus()
+            .AddServices()
+            .AddProxy()
+            .AddMessageFormatter()
+            ;
         
         return services;
     }

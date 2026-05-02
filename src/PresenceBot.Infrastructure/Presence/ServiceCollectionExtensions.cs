@@ -9,15 +9,17 @@ namespace PresenceBot.Infrastructure.Presence;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddPresenceService(this IServiceCollection services,
-        Action<RouterOptions>? configureRouter = null, Action<PresenceOptions>? configurePresence = null)
+    public static IServiceCollection AddPresenceService(this IServiceCollection services)
     {
-        services.AddRouterClient(configureRouter);
+        services.AddRouterClient();
 
-        if (configurePresence is not null)
-        {
-            services.Configure(configurePresence);
-        }
+        services
+            .AddOptions<RouterOptions>()
+            .BindConfiguration(RouterOptions.SectionName);
+        
+        services
+            .AddOptions<PresenceOptions>()
+            .BindConfiguration(PresenceOptions.SectionName);
 
         services
             .AddHostedService<PresenceInfoHandlerJob>()

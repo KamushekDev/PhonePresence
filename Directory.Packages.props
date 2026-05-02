@@ -3,6 +3,7 @@
     <PackageVersion Include="Commandante" Version="0.2.2" />
     <PackageVersion Include="Commandante.Extensions.Microsoft.DependencyInjection" Version="0.2.2" />
     <PackageVersion Include="coverlet.collector" Version="10.0.0" />
+    <PackageVersion Include="Humanizer" Version="3.0.10" />
     <PackageVersion Include="LinqSpecs" Version="3.2.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.7" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.7" />
@@ -15,6 +16,7 @@
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageVersion Include="OneOf" Version="3.0.271" />
     <PackageVersion Include="Telegram.Bot" Version="22.9.6.2" />
+    <PackageVersion Include="VkNet" Version="1.78.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
   </ItemGroup>

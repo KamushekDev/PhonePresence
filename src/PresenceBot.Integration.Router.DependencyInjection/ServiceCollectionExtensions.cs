@@ -8,12 +8,8 @@ public static class ServiceCollectionExtensions
 {
     private const string HttpClientName = "RouterGatewayClient";
 
-    public static void AddRouterClient(this IServiceCollection serviceCollection,
-        Action<RouterOptions>? configure = null)
+    public static void AddRouterClient(this IServiceCollection serviceCollection)
     {
-        if (configure != null)
-            serviceCollection.Configure(configure);
-
         serviceCollection.AddHttpClient<RouterGateway>(HttpClientName, ConfigureHttpClientForRouter)
             .ConfigurePrimaryHttpMessageHandler(() =>
                 new HttpClientHandler()

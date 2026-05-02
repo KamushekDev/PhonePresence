@@ -7,10 +7,12 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="Humanizer" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
       <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
       <PackageReference Include="Telegram.Bot" />
+      <PackageReference Include="VkNet" />
     </ItemGroup>
 
     <ItemGroup>
