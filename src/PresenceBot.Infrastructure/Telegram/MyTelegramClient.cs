@@ -21,7 +21,9 @@ public class MyTelegramClient(
     public async Task StartAsync(CancellationToken token)
     {
         if (_botClient is not null)
-            throw new  Exception("Telegram bot client already initialized");
+        {
+            await _botClient.Close(token);
+        }
 
         await using var scope = serviceProvider.CreateAsyncScope();
         var options = scope.ServiceProvider.GetRequiredService<IOptionsSnapshot<TelegramOptions>>();

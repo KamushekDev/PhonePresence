@@ -32,7 +32,7 @@ public class VkBackgroundJob(
 
                 while (!stoppingToken.IsCancellationRequested)
                 {
-                    var poll = await client.GetUpdates(server,  stoppingToken);
+                    var poll = await client.GetUpdates(server!,  stoppingToken);
 
                     server.Ts = poll.Ts;
 

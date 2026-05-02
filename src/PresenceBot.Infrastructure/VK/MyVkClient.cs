@@ -16,9 +16,11 @@ public class MyVkClient(IServiceProvider serviceProvider, ILogger<MyVkClient> lo
     private VkApi? _client;
     
     public async Task<LongPollServerResponse?> StartAsync(CancellationToken token)
-    {                
+    {
         if (_client is not null)
-            throw new Exception("Client is already running");
+        {
+            _client.Dispose();
+        }
         
         var options = serviceProvider
             .CreateAsyncScope()
@@ -43,7 +45,7 @@ public class MyVkClient(IServiceProvider serviceProvider, ILogger<MyVkClient> lo
         return server;
     }
 
-    public async Task<BotsLongPollHistoryResponse> GetUpdates(LongPollServerResponse? server, CancellationToken token)
+    public async Task<BotsLongPollHistoryResponse> GetUpdates(LongPollServerResponse server, CancellationToken token)
     {
         if (_client is null)
             throw new Exception("Client is not initialized"); 
