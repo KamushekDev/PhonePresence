@@ -15,7 +15,7 @@ public class MyVkClient(IServiceProvider serviceProvider, ILogger<MyVkClient> lo
 {
     private VkApi? _client;
     
-    public async Task<LongPollServerResponse?> StartAsync(CancellationToken token)
+    public async Task StartAsync(CancellationToken token)
     {
         if (_client is not null)
         {
@@ -39,8 +39,20 @@ public class MyVkClient(IServiceProvider serviceProvider, ILogger<MyVkClient> lo
         }, token);
 
         logger.LogInformation("VK API authorized");
+    }
 
-        var server = api.Groups.GetLongPollServer(options.GroupId);
+    public async Task<LongPollServerResponse?> GetLongPollServer(CancellationToken token)
+    {
+        if (_client is null)
+            throw new Exception("Client is not initialized");  
+        
+        var options = serviceProvider
+            .CreateAsyncScope()
+            .ServiceProvider
+            .GetRequiredService<IOptionsSnapshot<VkOptions>>()
+            .Value;
+        
+        var server = await _client.Groups.GetLongPollServerAsync(options.GroupId, token);
 
         return server;
     }

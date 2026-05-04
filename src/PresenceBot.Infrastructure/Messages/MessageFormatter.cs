@@ -7,6 +7,7 @@ namespace PresenceBot.Infrastructure.Messages;
 public class MessageFormatter : IMessageFormatter
 {
     private readonly static CultureInfo CultureInfo = new CultureInfo("ru-RU");
+    private const int HumanizerPrecision = 4;
 
     public string GetActiveClientMessage()
     {
@@ -16,6 +17,7 @@ public class MessageFormatter : IMessageFormatter
     public string GetInactiveClientMessage(TimeSpan inactivityTimeSpan)
     {
         var humanizedTimeSpan = inactivityTimeSpan.Humanize(
+            precision: HumanizerPrecision,
             minUnit: TimeUnit.Minute,
             culture: CultureInfo);
 
@@ -24,13 +26,15 @@ public class MessageFormatter : IMessageFormatter
 
     public string GetNeverActiveClient(string clientIdentity)
     {
-        return $"К сети никогда не был подключён клиент с идентификатором `{clientIdentity}`. Я пришлю уведомление, когда он появится в сети!";
+        return
+            $"К сети никогда не был подключён клиент с идентификатором `{clientIdentity}`. Я пришлю уведомление, когда он появится в сети!";
     }
 
     public string GetBecameActiveNotification(DateTimeOffset lastActiveTimestamp, TimeSpan inactivityTimeSpan)
     {
         var timestamp = lastActiveTimestamp.Humanize(culture: CultureInfo);
-        var span = inactivityTimeSpan.Humanize(culture: CultureInfo);
+        var span = inactivityTimeSpan.Humanize(precision: HumanizerPrecision, minUnit: TimeUnit.Minute,
+            culture: CultureInfo);
         return $"Клиент появился в сети {timestamp}. Вне сети клиент находился {span}.";
     }
 

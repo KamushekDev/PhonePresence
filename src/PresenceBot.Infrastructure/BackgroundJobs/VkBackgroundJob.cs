@@ -28,24 +28,36 @@ public class VkBackgroundJob(
             {
                 await using var scope = serviceProvider.CreateAsyncScope();
                 var client = scope.ServiceProvider.GetRequiredService<IMyVkClient>();
-                var server = await client.StartAsync(stoppingToken);
+                await client.StartAsync(stoppingToken);
 
                 while (!stoppingToken.IsCancellationRequested)
                 {
-                    var poll = await client.GetUpdates(server!,  stoppingToken);
+                    var server = await client.GetLongPollServer(stoppingToken);
 
-                    server.Ts = poll.Ts;
-
-                    foreach (var update in poll.Updates)
+                    while (!stoppingToken.IsCancellationRequested)
                     {
-                        if (update.Type.Value == GroupUpdateType.MessageNew)
+                        try
                         {
-                            if (update.Instance is MessageNew message)
-                                await HandleMessage(client, message, stoppingToken);
+                            var poll = await client.GetUpdates(server!, stoppingToken);
+
+                            server.Ts = poll.Ts;
+
+                            foreach (var update in poll.Updates)
+                            {
+                                if (update.Type.Value == GroupUpdateType.MessageNew)
+                                {
+                                    if (update.Instance is MessageNew message)
+                                        await HandleMessage(client, message, stoppingToken);
+                                }
+                            }
+
+                            await Task.Delay(50, stoppingToken);
+                        }
+                        catch
+                        {
+                            break;
                         }
                     }
-
-                    await Task.Delay(50, stoppingToken);
                 }
             }
             catch (Exception e)
@@ -114,12 +126,12 @@ public class VkBackgroundJob(
     {
         await api.Reply(new VkReplyData(message.PeerId.Value, message.Id.Value), text, token);
     }
-    
+
     private async Task AddNotificationRequest(AsyncServiceScope scope, Message message, string argClientIdentity,
         CancellationToken token)
     {
         var notificationRepository = scope.ServiceProvider.GetRequiredService<IPresenceNotificationsRepository>();
-        
+
         await notificationRepository.AddRequest(new NotificationRequest()
         {
             ClientIdentity = argClientIdentity,
@@ -128,4 +140,3 @@ public class VkBackgroundJob(
         }, token);
     }
 }
-
