@@ -72,7 +72,7 @@ public class PresenceMonitoringBackgroundJob : IHostedService
     {
         await using var scope = _serviceProvider.CreateAsyncScope();
 
-        var service = scope.ServiceProvider.GetRequiredService<IClientPresenceService>();
+        var service = scope.ServiceProvider.GetRequiredService<IClientPresenceGetterService>();
 
         var data = await service.GetConnectedClients(token);
 

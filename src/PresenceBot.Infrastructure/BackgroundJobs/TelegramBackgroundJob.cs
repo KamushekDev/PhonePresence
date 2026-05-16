@@ -3,14 +3,10 @@ using Comandante;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using PresenceBot.Core.Messages;
-using PresenceBot.Core.Notifications;
 using PresenceBot.Core.Notifications.Models;
 using PresenceBot.Core.Telegram;
-using PresenceBot.Infrastructure.Presence.Options;
+using PresenceBot.Infrastructure.Presence;
 using PresenceBot.Infrastructure.Telegram;
-using PresenceBot.Services.Presence;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
@@ -27,8 +23,8 @@ public class TelegramBackgroundJob(
         {
             try
             {
-                await using var scope = serviceProvider.CreateAsyncScope();     
-                var client =  scope.ServiceProvider.GetRequiredService<IMyTelegramClient>();
+                await using var scope = serviceProvider.CreateAsyncScope();
+                var client = scope.ServiceProvider.GetRequiredService<IMyTelegramClient>();
                 await client.StartAsync(stoppingToken);
 
                 await client.ReceiveAsync(HandleUpdate, stoppingToken);
@@ -64,47 +60,26 @@ public class TelegramBackgroundJob(
                         && message.Entities.All(x => x.Type is MessageEntityType.BotCommand):
                     {
                         await using var scope = serviceProvider.CreateAsyncScope();
-                        var queryDispatcher = scope
+                        var commandDispatcher = scope
                             .ServiceProvider
-                            .GetRequiredService<IQueryDispatcher>();
-
-                        var presenceOptions = scope.ServiceProvider
-                            .GetRequiredService<IOptionsSnapshot<PresenceOptions>>()
-                            .Value;
+                            .GetRequiredService<ICommandDispatcher>();
 
                         switch (message.EntityValues!.First())
                         {
                             case BotCommands.CheckPhoneCommand:
-                                var request = new PhonePresenceHandler.Query()
-                                {
-                                    ClientIdentity = presenceOptions.WantedClientIdentity,
-                                    ConfidenceInterval = presenceOptions.WantedConfidenceInterval
-                                };
-                                var result = await queryDispatcher.Dispatch(request, token);
+                                var request = new PhonePresenceHandler.Command(
+                                    NotificationSource.Telegram,
+                                    JsonSerializer.Serialize(new TelegramReplyData(message.Chat.Id, message.MessageId))
+                                );
+                                var result = await commandDispatcher.Dispatch(request, token);
 
-                                var messageFormatter = scope.ServiceProvider.GetRequiredService<IMessageFormatter>();
-                                
-                                await result.Match(
-                                    presented => Reply(client, message, messageFormatter.GetActiveClientMessage(), token),
-                                    async wasPresented =>
-                                    {
-                                        await Reply(client, message,
-                                            messageFormatter.GetInactiveClientMessage(wasPresented.ElapsedTime),
-                                            token);
-                                        await AddNotificationRequest(scope, message, wasPresented.ClientIdentity, token);
-                                    },
-                                    async wasNeverPresented =>
-                                    {
-                                        await Reply(client, message,
-                                            messageFormatter.GetNeverActiveClient(wasNeverPresented.ClientIdentity),
-                                            token);
-                                        await AddNotificationRequest(scope, message, wasNeverPresented.ClientIdentity, token);
-                                    });
+                                await Reply(client, message, result.ResponseToUser, token);
                                 break;
                             default:
                                 await Reply(client, message, "Я понимаю только заготовленные команды :(", token);
                                 return;
                         }
+
                         break;
                     }
                     default:
@@ -126,19 +101,7 @@ public class TelegramBackgroundJob(
         string message,
         CancellationToken token)
     {
-        await client.ReplyAsync(new TelegramReplyData(originalMessage.Chat.Id, originalMessage.MessageId), message, token);
-    }                                                              
-
-    private async Task AddNotificationRequest(AsyncServiceScope scope, Message message, string argClientIdentity,
-        CancellationToken token)
-    {
-        var notificationRepository = scope.ServiceProvider.GetRequiredService<IPresenceNotificationsRepository>();
-        
-        await notificationRepository.AddRequest(new NotificationRequest()
-        {
-            ClientIdentity = argClientIdentity,
-            Source = NotificationSource.Telegram,
-            ReplyData = JsonSerializer.Serialize(new TelegramReplyData(message.Chat.Id, message.MessageId))
-        }, token);
+        await client.ReplyAsync(new TelegramReplyData(originalMessage.Chat.Id, originalMessage.MessageId), message,
+            token);
     }
 }

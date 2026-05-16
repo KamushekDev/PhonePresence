@@ -1,22 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-      <ProjectReference Include="..\PresenceBot.Core\PresenceBot.Core.csproj" />
-      <ProjectReference Include="..\PresenceBot.Integration.Router.DependencyInjection\PresenceBot.Integration.Router.DependencyInjection.csproj" />
-      <ProjectReference Include="..\PresenceBot.Services\PresenceBot.Services.csproj" />
+        <ProjectReference Include="..\PresenceBot.Core\PresenceBot.Core.csproj"/>
+        <ProjectReference Include="..\PresenceBot.Integration.Router.DependencyInjection\PresenceBot.Integration.Router.DependencyInjection.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Humanizer" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-      <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
-      <PackageReference Include="Telegram.Bot" />
-      <PackageReference Include="VkNet" />
+        <PackageReference Include="Commandante"/>
+        <PackageReference Include="Commandante.Extensions.Microsoft.DependencyInjection"/>
+        <PackageReference Include="Humanizer"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions"/>
+        <PackageReference Include="Telegram.Bot"/>
+        <PackageReference Include="VkNet"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Database\Migrations\" />
+        <Folder Include="Database\Migrations\"/>
     </ItemGroup>
 
 </Project>

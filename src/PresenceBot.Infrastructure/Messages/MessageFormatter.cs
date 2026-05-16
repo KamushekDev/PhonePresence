@@ -11,7 +11,7 @@ public class MessageFormatter : IMessageFormatter
 
     public string GetActiveClientMessage()
     {
-        return "Клиент в сети :)";
+        return "Клиент в сети 😁";
     }
 
     public string GetInactiveClientMessage(TimeSpan inactivityTimeSpan)

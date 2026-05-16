@@ -8,7 +8,6 @@ using PresenceBot.Infrastructure.Presence;
 using PresenceBot.Infrastructure.Proxy;
 using PresenceBot.Infrastructure.Telegram;
 using PresenceBot.Infrastructure.VK;
-using PresenceBot.Services;
 
 namespace PresenceBot.Infrastructure;
 
@@ -24,11 +23,13 @@ public static class ServiceCollectionExtensions
             .AddTelegram()
             .AddVkontakte()
             .AddMessageBus()
-            .AddServices()
             .AddProxy()
             .AddMessageFormatter()
             .AddPresenceNotifications()
             ;
+
+        services
+            .AddSingleton(TimeProvider.System);
         
         return services;
     }

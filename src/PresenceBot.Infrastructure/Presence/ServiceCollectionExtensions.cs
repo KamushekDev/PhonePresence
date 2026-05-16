@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Comandante;
+using Microsoft.Extensions.DependencyInjection;
 using PresenceBot.Core.Presence;
 using PresenceBot.Infrastructure.BackgroundJobs;
 using PresenceBot.Infrastructure.Presence.Options;
@@ -25,12 +26,15 @@ public static class ServiceCollectionExtensions
             .AddHostedService<PresenceInfoHandlerJob>()
             .AddHostedService<PresenceMonitoringBackgroundJob>();
 
+        services.AddTransient<IClientPresenceGetterService, ClientPresenceGetterService>();
         services.AddTransient<IClientPresenceService, ClientPresenceService>();
 
         services.AddTransient<IClientPresenceRepository, ClientPresenceRepository>();
 
         services
             .AddHostedService<PresenceNotificationJob>();
+        
+        services.AddComandate(typeof(IInfrastructureMarker).Assembly);
 
         return services;
     }

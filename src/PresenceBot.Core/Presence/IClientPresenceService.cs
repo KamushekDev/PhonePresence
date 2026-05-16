@@ -4,5 +4,6 @@ namespace PresenceBot.Core.Presence;
 
 public interface IClientPresenceService
 {
-    Task<List<PresenceInfo>> GetConnectedClients(CancellationToken token);
+    Task<ClientPresenceInfo> GetIdentityPresence(string clientIdentity, TimeSpan confidenceInterval,
+        CancellationToken token);
 }
